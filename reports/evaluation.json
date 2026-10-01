@@ -1,0 +1,40 @@
+{
+  "executed_at": "2026-10-01",
+  "source": "synthetic academic scenario",
+  "seed": 2026,
+  "assumptions": {
+    "initial": [500, 500, 500],
+    "horizon": 40,
+    "failure": 0.05,
+    "repair": 0.25,
+    "return_station": "A",
+    "trip_cost": 0.5,
+    "failure_cost": 50,
+    "repair_cost": 10
+  },
+  "expected_trips_to_failure": [20, 20, 20],
+  "comparison": [
+    {
+      "scenario": "mobility",
+      "availability": 1,
+      "total_cost": 30000,
+      "expected_failures": 0,
+      "expected_repairs": 0
+    },
+    {
+      "scenario": "absorbing",
+      "availability": 0.12851216,
+      "total_cost": 78433.90590914,
+      "expected_failures": 1307.23176515,
+      "expected_repairs": 0
+    },
+    {
+      "scenario": "maintenance",
+      "availability": 0.83333344,
+      "total_cost": 175416.66640138,
+      "expected_failures": 2541.66664014,
+      "expected_repairs": 2291.66679931
+    }
+  ],
+  "maintenance_stationary": [0.38547972, 0.21627913, 0.23157448, 0.16666667]
+}

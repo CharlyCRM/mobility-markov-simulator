@@ -1,0 +1,9 @@
+{
+  "purpose": "Read-only academic inputs; hashes verified before and after development",
+  "files": [
+    {
+      "path": "Asignaturas_Cursadas/Algebra_lineal/PEC/PEC5/PEC_5_carlos_ramirez.Rmd",
+      "sha256": "c5c956a34e0afedb73d4490b67c4f37e21208f51e8170c5074d9718a43776556"
+    }
+  ]
+}
