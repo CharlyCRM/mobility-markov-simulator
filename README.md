@@ -1,12 +1,44 @@
-# Mobility Markov Simulator
+# Una flota en movimiento
 
-**Carlos Ramírez Martín · R / Shiny / linear algebra / Monte Carlo**
+¿Cómo se reparte una flota de bicicletas cuando cada viaje puede terminar en una estación distinta? ¿Y qué cambia si algunas se averían o vuelven al servicio después de repararse?
 
-An interactive fleet model extending my UOC linear-algebra coursework. Three stations, a failure state and three explicit scenarios: mobility without failures, absorbing failure, and maintenance with return to service. Spanish/English UI.
+Este simulador nació de un trabajo de álgebra lineal de la UOC. Lo convertí en una aplicación con R y Shiny para experimentar con esas preguntas: modificar probabilidades, observar la flota y comparar escenarios de movilidad y mantenimiento.
 
-## Run locally
+[Abrir la aplicación](https://mobility-markov-simulator-production.up.railway.app) · [Ver el proyecto en mi portfolio](https://carlos-ramirez-martin.up.railway.app/es/projects/mobility-markov-simulator/)
 
-Requires R 4.4.2 or compatible newer R:
+## Qué puedes probar
+
+La flota se mueve entre tres estaciones, A, B y C. Puedes cambiar su distribución inicial y la probabilidad de ir de una estación a otra. Después, compara lo que ocurre sin averías, con averías que retiran bicicletas del servicio o con un taller que las repara y devuelve a una estación.
+
+Puedes animar los pasos, comparar el cálculo matemático con una simulación Monte Carlo y consultar la distribución estacionaria, los viajes esperados hasta una avería y la disponibilidad. También puedes asignar costes por viaje, avería y reparación, y descargar matrices y resultados en JSON.
+
+Cada fila de la matriz debe sumar uno y contener probabilidades entre 0 y 1. Si no se cumple, la aplicación avisa en lugar de corregirlas sin explicarlo. La flota inicial admite cantidades enteras no negativas hasta un total de 300.000 bicicletas.
+
+La interfaz está en español e inglés. La demo se suspende cuando no se utiliza y puede tardar en arrancar al volver a abrirla.
+
+## El modelo detrás de la aplicación
+
+Uso una cadena de Markov: cada fila de `P` describe desde qué estación sale una bicicleta y dónde puede acabar. Si `n` es el vector fila de la flota actual, `nP` da su distribución esperada en el siguiente paso.
+
+Para representar averías añado el estado `T`. Una bicicleta activa entra en él con probabilidad `f`; el resto de sus probabilidades se multiplica por `1-f`. Con mantenimiento, una bicicleta en `T` vuelve a la estación elegida con probabilidad `r`.
+
+Un paso representa una oportunidad de transición, no una hora. Las bicicletas activas hacen un viaje; las del taller esperan o salen reparadas. Los costes cuentan esos eventos a lo largo del horizonte seleccionado.
+
+Con una probabilidad de avería de `0,05`, el escenario sin reparación da 20 viajes esperados hasta la avería desde cualquiera de las estaciones. Con reparación de `0,25`, la disponibilidad estacionaria es `r / (r + f)`, aproximadamente un 83,33 %. Son consecuencias de los supuestos, no mediciones de una flota real.
+
+## Qué conviene tener en cuenta
+
+Las probabilidades son constantes. No contemplo capacidad de estaciones, vehículos de redistribución, demanda variable, compra de bicicletas ni ingresos. Los costes permiten comparar esos escenarios, no recomendar una política económica real.
+
+La simulación conserva exactamente el número entero de bicicletas; el cálculo analítico puede dar cantidades fraccionarias porque son valores esperados. Una simulación con semilla fija es reproducible, pero no es un intervalo de confianza.
+
+Una distribución estacionaria tampoco garantiza que todas las trayectorias converjan: las cadenas periódicas pueden oscilar. Cuando no hay una distribución estacionaria única, la aplicación lo indica.
+
+[reports/evaluation.json](reports/evaluation.json) recoge el escenario de referencia: 1.500 bicicletas, 40 pasos, probabilidades de avería y reparación de 0,05 y 0,25, y retorno a A.
+
+## Ejecutarlo en local
+
+El proyecto se preparó con R 4.4.2. Desde la carpeta del repositorio:
 
 ```sh
 Rscript setup.R
@@ -14,36 +46,20 @@ Rscript tests/run.R
 Rscript run.R
 ```
 
-Open http://127.0.0.1:8505/ (`/?lang=en` for English). Loopback only; no Railway deployment. Exact dependency restoration: `renv::restore(lockfile='renv.lock', library='.library', prompt=FALSE)` after installing renv.
+Abre http://127.0.0.1:8505/; añade `/?lang=en` para entrar en inglés. El servidor solo escucha en tu equipo. `setup.R` instala los paquetes necesarios. Para restaurar las versiones registradas, instala `renv` y ejecuta:
 
-## Explore
-
-- Edit the mobility matrix, initial fleet, failure/repair probabilities and return station.
-- Inspect or animate transition steps and compare analytic expectations with seeded Monte Carlo.
-- See stationary distributions, expected trips until absorbing failure, availability and illustrative costs.
-- Download the transition matrix, trajectories and scenario comparison as JSON.
-
-Every row must contain probabilities in [0,1] summing to one. Invalid inputs are rejected rather than silently normalized. Fleet counts are whole, nonnegative and bounded to 300,000 for the interactive app. Calculated expectations may be fractional; simulation conserves integer fleet size exactly.
-
-## Mathematical model
-
-Rows encode origin → destination. With row-vector fleet `n`, the next expected fleet is `nP`. A failed active bicycle enters `T` with probability `f`; other movement probabilities are multiplied by `1-f`. Maintenance returns a bicycle from `T` to a selected station with probability `r`.
-
-A step is a **transition opportunity, not an hour**: active bicycles make a trip, while those in T wait or return after repair. Failure is independent and constant across active states. There are no station capacities, rebalancing trucks, time-varying demand, purchase costs or revenue. Scenario costs count active trips, entries into failure and completed repairs over the selected horizon.
-
-For absorbing failure with `f=0.05`, the fundamental matrix gives **20 expected trips** until failure from each station. With `r=0.25`, the maintenance model's stationary availability is `r/(r+f) = 83.333%`. A stationary equilibrium does not necessarily imply trajectory convergence for periodic chains; nonunique stationary distributions are explicitly reported.
-
-`reports/evaluation.json` records the default scenario: 1,500 bicycles, 40 transition opportunities, failure .05, repair .25, return to A. It contains mathematical expectations under hypothetical assumptions, **not measured fleet performance or an economic recommendation**. Monte Carlo is a single seeded realization, not a confidence interval.
-
-## Tests and provenance
-
-Tests cover stochastic-matrix validation, nonnegative trajectories, exact fleet conservation, reproducible simulation, the 20-trip analytic result, repair boundaries, stationary uniqueness, Monte Carlo approximation and event-based costs.
-
-```sh
-Rscript scripts/evaluate.R
-Rscript scripts/verify-originals.R /path/to/UOC
+```r
+renv::restore(lockfile = "renv.lock", library = ".library", prompt = FALSE)
 ```
 
-The original PEC5 is an immutable read-only input; its SHA-256 is recorded in `provenance/source-manifest.json`. An archival working copy is ignored by Git. The public project contains independently rebuilt code and academic parameter values, not institutional prompts or teaching PDFs. MIT applies to this project's code.
+Las pruebas comprueban las matrices, la conservación de la flota, la simulación reproducible, los viajes hasta la avería, los casos límite de reparación y los costes. Para recalcular el informe, ejecuta `Rscript scripts/evaluate.R`.
 
-Set `PORTFOLIO_URL` to change the return link (default `http://localhost:4322`). No uploads or personal-data collection. All dependencies and output are outside the UOC directory.
+## Origen del trabajo y licencia
+
+El punto de partida fue mi PEC5 de álgebra lineal. El código se reconstruyó por separado y no distribuye enunciados ni materiales docentes. El original se conserva sin modificar y su SHA-256 figura en `provenance/source-manifest.json`.
+
+Si tienes acceso a mis originales, puedes comprobar su integridad con `Rscript scripts/verify-originals.R /ruta/a/UOC`. La copia de archivo queda fuera de Git; dependencias y resultados se guardan aquí, no en la carpeta académica.
+
+El código propio tiene licencia MIT. La aplicación no admite subidas de archivos ni recoge datos personales. `PORTFOLIO_URL` cambia el enlace de regreso al portfolio; por defecto usa `http://localhost:4322`.
+
+Carlos Ramírez Martín

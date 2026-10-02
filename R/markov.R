@@ -67,7 +67,7 @@ scenario_costs <- function(p,trajectory,trip_cost=.5,failure_cost=50,repair_cost
   if(any(!is.finite(c(trip_cost,failure_cost,repair_cost))) || min(trip_cost,failure_cost,repair_cost)<0) stop("Costs must be finite and nonnegative.")
   origins<-trajectory[-nrow(trajectory),,drop=FALSE]
   active<-setdiff(colnames(p),"T")
-  # One step is a transition opportunity: active bicycles make a trip; those in T wait or return.
+  # En cada paso las bicicletas activas viajan; las del taller esperan o salen reparadas.
   trips<-sum(origins[,active,drop=FALSE])
   failures<-if("T" %in% colnames(p)) sum(origins[,active,drop=FALSE] %*% p[active,"T",drop=FALSE]) else 0
   repairs<-if("T" %in% colnames(p)) sum(origins[,"T"])*(1-p["T","T"]) else 0
